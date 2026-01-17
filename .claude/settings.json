@@ -1,0 +1,40 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash",
+      "Read",
+      "Write", 
+      "Edit",
+      "MultiEdit",
+      "Glob",
+      "Grep",
+      "LS",
+      "TodoWrite",
+      "Task",
+      "WebFetch",
+      "WebSearch",
+      "NotebookRead",
+      "NotebookEdit",
+      "mcp__ide__getDiagnostics",
+      "mcp__ide__executeCode"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|MultiEdit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path' | { read file_path; if echo \"$file_path\" | grep -q '\\.(ts|js|tsx|jsx)$'; then npx prettier --write \"$file_path\"; fi; }"
+          },
+          {
+            "type": "command",
+            "command": "file=$(jq -r '.tool_input.file_path'); case \"$file\" in *.py|*.pyi) ruff check --fix --exit-zero \"$file\"; ruff format \"$file\" ;; esac"
+
+          }
+        ]
+      }
+    ]
+  }
+}
