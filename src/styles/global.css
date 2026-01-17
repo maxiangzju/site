@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #5b9bd5;      /* ocean blue links */
+  --color-primary-dark: #4a8bc5;
+  --color-bg: #1b3156;           /* dark navy background */
+  --color-bg-secondary: #152744; /* darker navy */
+  --color-text: #e0e0e0;         /* light gray text */
+  --color-text-muted: #8ba4c4;   /* muted blue-gray */
+  --color-border: #2a4a6d;       /* subtle blue border */
+}
+
+@layer base {
+  html {
+    @apply scroll-smooth;
+  }
+
+  body {
+    @apply bg-[var(--color-bg)] text-[var(--color-text)] antialiased;
+  }
+}

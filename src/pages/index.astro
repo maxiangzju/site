@@ -1,0 +1,36 @@
+---
+import BaseLayout from '../components/layout/BaseLayout.astro';
+---
+
+<BaseLayout title="Home | Xiang's Island">
+  <div class="max-w-6xl mx-auto px-4 py-16">
+    <section class="text-center mb-16">
+      <h1 class="text-4xl font-bold mb-4">Welcome to Xiang's Island</h1>
+      <p class="text-xl text-[var(--color-text-muted)] max-w-2xl mx-auto">
+        A personal space for sharing thoughts, building games, creating tools, and visualizing algorithms.
+      </p>
+    </section>
+
+    <section class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <a href="/blog" class="group block p-6 bg-[var(--color-bg-secondary)]/50 border border-[var(--color-border)] rounded-lg hover:border-[var(--color-primary)] hover:bg-[var(--color-bg-secondary)] transition-all">
+        <h2 class="text-xl font-semibold mb-2 group-hover:text-[var(--color-primary)]">Blog</h2>
+        <p class="text-[var(--color-text-muted)]">Articles and thoughts on various topics.</p>
+      </a>
+
+      <a href="/game" class="group block p-6 bg-[var(--color-bg-secondary)]/50 border border-[var(--color-border)] rounded-lg hover:border-[var(--color-primary)] hover:bg-[var(--color-bg-secondary)] transition-all">
+        <h2 class="text-xl font-semibold mb-2 group-hover:text-[var(--color-primary)]">Game</h2>
+        <p class="text-[var(--color-text-muted)]">Interactive canvas-based web game.</p>
+      </a>
+
+      <a href="/tools" class="group block p-6 bg-[var(--color-bg-secondary)]/50 border border-[var(--color-border)] rounded-lg hover:border-[var(--color-primary)] hover:bg-[var(--color-bg-secondary)] transition-all">
+        <h2 class="text-xl font-semibold mb-2 group-hover:text-[var(--color-primary)]">Tools</h2>
+        <p class="text-[var(--color-text-muted)]">Useful online utilities and helpers.</p>
+      </a>
+
+      <a href="/algo-viz" class="group block p-6 bg-[var(--color-bg-secondary)]/50 border border-[var(--color-border)] rounded-lg hover:border-[var(--color-primary)] hover:bg-[var(--color-bg-secondary)] transition-all">
+        <h2 class="text-xl font-semibold mb-2 group-hover:text-[var(--color-primary)]">Algo-Viz</h2>
+        <p class="text-[var(--color-text-muted)]">LeetCode-style algorithm visualizations.</p>
+      </a>
+    </section>
+  </div>
+</BaseLayout>

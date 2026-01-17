@@ -1,0 +1,89 @@
+---
+import BaseLayout from '../../components/layout/BaseLayout.astro';
+
+const algorithms = [
+  {
+    name: 'Sorting Algorithms',
+    description: 'Visualize bubble sort, quicksort, merge sort, and more',
+    href: '/algo-viz/sorting',
+    category: 'Sorting',
+    status: 'coming-soon',
+  },
+  {
+    name: 'Binary Search',
+    description: 'Step through binary search on a sorted array',
+    href: '/algo-viz/binary-search',
+    category: 'Searching',
+    status: 'coming-soon',
+  },
+  {
+    name: 'BFS & DFS',
+    description: 'Graph traversal algorithms visualized',
+    href: '/algo-viz/graph-traversal',
+    category: 'Graphs',
+    status: 'coming-soon',
+  },
+  {
+    name: 'Two Pointers',
+    description: 'Common two-pointer technique patterns',
+    href: '/algo-viz/two-pointers',
+    category: 'Techniques',
+    status: 'coming-soon',
+  },
+  {
+    name: 'Sliding Window',
+    description: 'Sliding window algorithm visualizations',
+    href: '/algo-viz/sliding-window',
+    category: 'Techniques',
+    status: 'coming-soon',
+  },
+  {
+    name: 'Dynamic Programming',
+    description: 'DP problems with step-by-step solutions',
+    href: '/algo-viz/dynamic-programming',
+    category: 'DP',
+    status: 'coming-soon',
+  },
+];
+
+const categories = [...new Set(algorithms.map(a => a.category))];
+---
+
+<BaseLayout title="Algorithm Visualizations | My Site">
+  <div class="max-w-4xl mx-auto px-4 py-16">
+    <h1 class="text-3xl font-bold mb-4">Algorithm Visualizations</h1>
+    <p class="text-[var(--color-text-muted)] mb-8">
+      Interactive visualizations to help understand common algorithms and data structures.
+      LeetCode-style problems with step-by-step animations.
+    </p>
+
+    {categories.map(category => (
+      <section class="mb-10">
+        <h2 class="text-xl font-semibold mb-4 text-[var(--color-primary)]">{category}</h2>
+        <div class="grid md:grid-cols-2 gap-4">
+          {algorithms.filter(a => a.category === category).map(algo => (
+            <div class="border border-[var(--color-border)] rounded-lg p-5 relative">
+              {algo.status === 'coming-soon' && (
+                <span class="absolute top-2 right-2 text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
+                  Coming Soon
+                </span>
+              )}
+              <h3 class="text-lg font-medium mb-2">{algo.name}</h3>
+              <p class="text-sm text-[var(--color-text-muted)]">{algo.description}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+    ))}
+
+    <section class="mt-8 p-6 bg-[var(--color-bg-secondary)] rounded-lg">
+      <h2 class="text-xl font-semibold mb-3">How These Work</h2>
+      <ul class="space-y-2 text-[var(--color-text-muted)]">
+        <li>• Step through algorithms at your own pace</li>
+        <li>• See the data structures update in real-time</li>
+        <li>• Understand time and space complexity</li>
+        <li>• Practice with different input sizes</li>
+      </ul>
+    </section>
+  </div>
+</BaseLayout>

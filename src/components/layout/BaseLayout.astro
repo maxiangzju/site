@@ -1,0 +1,103 @@
+---
+import { ViewTransitions } from 'astro:transitions';
+import '../../styles/global.css';
+import MetaballHeader from '../MetaballHeader.astro';
+import MetaballFooter from '../MetaballFooter.astro';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = "Xiang's Island - Personal website with blog, games, tools, and algorithm visualizations" } = Astro.props;
+
+const navItems = [
+  { href: '/', label: 'Home' },
+  { href: '/blog', label: 'Blog' },
+  { href: '/game', label: 'Game' },
+  { href: '/tools', label: 'Tools' },
+  { href: '/algo-viz', label: 'Algo-Viz' },
+];
+
+const currentPath = Astro.url.pathname;
+---
+
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{title}</title>
+    <ViewTransitions />
+  </head>
+  <body class="min-h-screen flex flex-col">
+    <MetaballHeader />
+
+    <header class="bg-[var(--color-bg)]">
+      <nav class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+        <a href="/" class="text-xl font-bold text-[var(--color-primary)]">
+          Xiang's Island
+        </a>
+        <ul class="flex gap-6">
+          {navItems.map(item => (
+            <li>
+              <a
+                href={item.href}
+                class:list={[
+                  'nav-link transition-colors',
+                  currentPath === item.href || (item.href !== '/' && currentPath.startsWith(item.href))
+                    ? 'text-[var(--color-primary)] font-medium'
+                    : 'text-[var(--color-text-muted)]'
+                ]}
+              >
+                {item.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    </header>
+
+    <main class="flex-1">
+      <slot />
+    </main>
+
+    <footer class="bg-[var(--color-bg-secondary)]">
+      <div class="max-w-6xl mx-auto px-4 py-6 text-center text-[var(--color-text-muted)] text-sm">
+        <p>&copy; {new Date().getFullYear()} Xiang's Island. Built with Astro.</p>
+      </div>
+    </footer>
+
+    <MetaballFooter />
+
+    <script is:inline src="/metaball-animation.js"></script>
+  </body>
+</html>
+
+<style>
+  .nav-link {
+    position: relative;
+    text-decoration: none;
+  }
+
+  .nav-link::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: -2px;
+    width: 0;
+    height: 2px;
+    background-color: var(--color-primary);
+    transition: width 0.2s ease;
+  }
+
+  .nav-link:hover::after {
+    width: 100%;
+  }
+
+  .nav-link:hover {
+    color: var(--color-primary);
+  }
+</style>

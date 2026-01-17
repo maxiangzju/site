@@ -1,0 +1,60 @@
+---
+import BaseLayout from '../../components/layout/BaseLayout.astro';
+
+const tools = [
+  {
+    name: 'JSON Formatter',
+    description: 'Format and validate JSON data',
+    href: '/tools/json-formatter',
+    status: 'coming-soon',
+  },
+  {
+    name: 'Base64 Encoder/Decoder',
+    description: 'Encode and decode Base64 strings',
+    href: '/tools/base64',
+    status: 'coming-soon',
+  },
+  {
+    name: 'UUID Generator',
+    description: 'Generate random UUIDs',
+    href: '/tools/uuid',
+    status: 'coming-soon',
+  },
+  {
+    name: 'Color Converter',
+    description: 'Convert between HEX, RGB, and HSL',
+    href: '/tools/color-converter',
+    status: 'coming-soon',
+  },
+];
+---
+
+<BaseLayout title="Tools | My Site">
+  <div class="max-w-4xl mx-auto px-4 py-16">
+    <h1 class="text-3xl font-bold mb-4">Online Tools</h1>
+    <p class="text-[var(--color-text-muted)] mb-8">
+      A collection of useful developer utilities.
+    </p>
+
+    <div class="grid md:grid-cols-2 gap-6">
+      {tools.map(tool => (
+        <div class="border border-[var(--color-border)] rounded-lg p-6 relative">
+          {tool.status === 'coming-soon' && (
+            <span class="absolute top-2 right-2 text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
+              Coming Soon
+            </span>
+          )}
+          <h2 class="text-xl font-semibold mb-2">{tool.name}</h2>
+          <p class="text-[var(--color-text-muted)]">{tool.description}</p>
+        </div>
+      ))}
+    </div>
+
+    <section class="mt-12 border-t border-[var(--color-border)] pt-8">
+      <h2 class="text-xl font-semibold mb-4">Want to Suggest a Tool?</h2>
+      <p class="text-[var(--color-text-muted)]">
+        Have an idea for a useful tool? Let me know and I might build it!
+      </p>
+    </section>
+  </div>
+</BaseLayout>

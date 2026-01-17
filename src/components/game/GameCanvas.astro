@@ -1,0 +1,104 @@
+---
+interface Props {
+  width?: number;
+  height?: number;
+  engineType?: 'canvas2d' | 'three';
+}
+
+const { width = 800, height = 600, engineType = 'canvas2d' } = Astro.props;
+---
+
+<div class="game-container">
+  <canvas
+    id="game-canvas"
+    width={width}
+    height={height}
+    data-engine={engineType}
+    class="rounded-lg shadow-lg"
+  ></canvas>
+  <div class="controls mt-4 flex gap-4">
+    <button id="start-btn" class="px-4 py-2 bg-[var(--color-primary)] text-white rounded hover:bg-[var(--color-primary-dark)] transition-colors">
+      Start
+    </button>
+    <button id="stop-btn" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors">
+      Stop
+    </button>
+  </div>
+</div>
+
+<script>
+  import { Canvas2DEngine } from './engines/canvas2d';
+  import { ThreeJSEngine } from './engines/three';
+  import type { GameEngine, EngineType } from './engines/types';
+
+  function initGame() {
+    const canvas = document.getElementById('game-canvas') as HTMLCanvasElement;
+    const startBtn = document.getElementById('start-btn');
+    const stopBtn = document.getElementById('stop-btn');
+
+    if (!canvas || !startBtn || !stopBtn) return;
+
+    const engineType = (canvas.dataset.engine || 'canvas2d') as EngineType;
+
+    // Create engine based on type
+    let engine: GameEngine;
+    switch (engineType) {
+      case 'three':
+        engine = new ThreeJSEngine();
+        break;
+      case 'canvas2d':
+      default:
+        engine = new Canvas2DEngine();
+        break;
+    }
+
+    // Initialize engine
+    engine.init(canvas);
+
+    // Handle resize
+    function handleResize() {
+      const container = canvas.parentElement;
+      if (container) {
+        const rect = container.getBoundingClientRect();
+        const width = Math.min(rect.width - 32, 800);
+        const height = Math.round(width * 0.75);
+        engine.resize(width, height);
+      }
+    }
+
+    window.addEventListener('resize', handleResize);
+    handleResize();
+
+    // Control buttons
+    startBtn.addEventListener('click', () => engine.start());
+    stopBtn.addEventListener('click', () => engine.stop());
+
+    // Auto-start
+    engine.start();
+
+    // Cleanup on navigation
+    document.addEventListener('astro:before-swap', () => {
+      engine.dispose();
+      window.removeEventListener('resize', handleResize);
+    });
+  }
+
+  // Initialize on page load
+  initGame();
+
+  // Re-initialize on Astro page transitions
+  document.addEventListener('astro:after-swap', initGame);
+</script>
+
+<style>
+  .game-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  #game-canvas {
+    max-width: 100%;
+    height: auto;
+  }
+</style>
