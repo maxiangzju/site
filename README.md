@@ -15,7 +15,7 @@ A personal website built with **Astro** and **Tailwind CSS**, featuring an ocean
 - ✅ Blue ocean themed design with dark navy background
 - ✅ WebGL animated header/footer (beach wave effect)
 - ✅ View Transitions for seamless navigation (animations persist across pages)
-- 🚧 Wave animation - needs refinement (planned for next session)
+- ✅ Wave animation - one-way ocean waves flowing toward shore, thinning as they approach
 
 ## Project Structure
 
