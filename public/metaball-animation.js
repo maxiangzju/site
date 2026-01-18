@@ -465,9 +465,34 @@
   }
 
   // Initialize when DOM is ready
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
+  // Use astro:page-load for View Transitions support
+  function setupInit() {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
   }
+
+  // For Astro View Transitions - only reinit if canvases changed
+  document.addEventListener('astro:page-load', function() {
+    // Check if our canvases still exist and have WebGL context
+    const headerCanvas = document.getElementById('header-canvas');
+    const footerCanvas = document.getElementById('footer-canvas');
+
+    // If canvases exist but effects array is empty or contexts lost, reinit
+    const needsReinit = (headerCanvas || footerCanvas) &&
+      (effects.length === 0 || effects.some(e => e && e.gl.isContextLost()));
+
+    if (needsReinit) {
+      initialized = false;
+      effects = [];
+      visibleCanvases = new Set();
+      startTime = performance.now();
+      init();
+    }
+  });
+
+  // Initial load
+  setupInit();
 })();
