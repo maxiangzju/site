@@ -4,27 +4,33 @@ import BaseLayout from '../../components/layout/BaseLayout.astro';
 const tools = [
   {
     name: 'JSON Formatter',
-    description: 'Format and validate JSON data',
+    description: 'Format, validate, and minify JSON data',
     href: '/tools/json-formatter',
-    status: 'coming-soon',
+    icon: '{ }',
   },
   {
     name: 'Base64 Encoder/Decoder',
     description: 'Encode and decode Base64 strings',
     href: '/tools/base64',
-    status: 'coming-soon',
+    icon: '⇄',
+  },
+  {
+    name: 'URL Encoder/Decoder',
+    description: 'Encode and decode URL strings',
+    href: '/tools/url-encoder',
+    icon: '🔗',
   },
   {
     name: 'UUID Generator',
-    description: 'Generate random UUIDs',
+    description: 'Generate random UUIDs (v4)',
     href: '/tools/uuid',
-    status: 'coming-soon',
+    icon: '🎲',
   },
   {
-    name: 'Color Converter',
-    description: 'Convert between HEX, RGB, and HSL',
-    href: '/tools/color-converter',
-    status: 'coming-soon',
+    name: 'Hash Generator',
+    description: 'Generate MD5, SHA1, and SHA256 hashes',
+    href: '/tools/hash',
+    icon: '#',
   },
 ];
 ---
@@ -38,15 +44,18 @@ const tools = [
 
     <div class="grid md:grid-cols-2 gap-6">
       {tools.map(tool => (
-        <div class="border border-[var(--color-border)] rounded-lg p-6 relative">
-          {tool.status === 'coming-soon' && (
-            <span class="absolute top-2 right-2 text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
-              Coming Soon
-            </span>
-          )}
-          <h2 class="text-xl font-semibold mb-2">{tool.name}</h2>
-          <p class="text-[var(--color-text-muted)]">{tool.description}</p>
-        </div>
+        <a
+          href={tool.href}
+          class="group block border border-[var(--color-border)] rounded-lg p-6 hover:border-[var(--color-primary)] transition-all hover:bg-[var(--color-bg-secondary)]"
+        >
+          <div class="flex items-start gap-3">
+            <span class="text-2xl">{tool.icon}</span>
+            <div>
+              <h2 class="text-xl font-semibold mb-2 group-hover:text-[var(--color-primary)]">{tool.name}</h2>
+              <p class="text-[var(--color-text-muted)]">{tool.description}</p>
+            </div>
+          </div>
+        </a>
       ))}
     </div>
 

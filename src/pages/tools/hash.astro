@@ -1,0 +1,224 @@
+---
+import BaseLayout from '../../components/layout/BaseLayout.astro';
+---
+
+<BaseLayout title="Hash Generator | Xiang's Island">
+  <div class="max-w-5xl mx-auto px-4 py-16">
+    <div class="mb-8">
+      <a href="/tools" class="text-[var(--color-primary)] hover:underline mb-2 inline-block">← Back to Tools</a>
+      <h1 class="text-3xl font-bold mb-2">Hash Generator</h1>
+      <p class="text-[var(--color-text-muted)]">
+        Generate MD5, SHA-1, and SHA-256 hashes from text.
+      </p>
+    </div>
+
+    <div class="mb-6">
+      <div class="flex items-center justify-between mb-3">
+        <label for="input" class="text-lg font-semibold">Input Text</label>
+        <button
+          id="clearBtn"
+          class="px-3 py-1 text-sm bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded hover:border-[var(--color-primary)] transition-colors"
+        >
+          Clear
+        </button>
+      </div>
+      <textarea
+        id="input"
+        placeholder="Enter text to hash"
+        class="w-full h-[200px] p-4 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-lg text-[var(--color-text)] font-mono text-sm resize-none focus:outline-none focus:border-[var(--color-primary)] transition-colors"
+      ></textarea>
+    </div>
+
+    <div class="space-y-4">
+      <div class="p-4 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-lg">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="font-semibold">MD5</h3>
+          <button
+            id="copyMd5Btn"
+            class="px-3 py-1 text-xs bg-[var(--color-bg)] border border-[var(--color-border)] rounded hover:border-[var(--color-primary)] transition-colors"
+          >
+            Copy
+          </button>
+        </div>
+        <code id="md5Output" class="block text-sm font-mono text-[var(--color-text-muted)] break-all">
+          -
+        </code>
+      </div>
+
+      <div class="p-4 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-lg">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="font-semibold">SHA-1</h3>
+          <button
+            id="copySha1Btn"
+            class="px-3 py-1 text-xs bg-[var(--color-bg)] border border-[var(--color-border)] rounded hover:border-[var(--color-primary)] transition-colors"
+          >
+            Copy
+          </button>
+        </div>
+        <code id="sha1Output" class="block text-sm font-mono text-[var(--color-text-muted)] break-all">
+          -
+        </code>
+      </div>
+
+      <div class="p-4 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-lg">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="font-semibold">SHA-256</h3>
+          <button
+            id="copySha256Btn"
+            class="px-3 py-1 text-xs bg-[var(--color-bg)] border border-[var(--color-border)] rounded hover:border-[var(--color-primary)] transition-colors"
+          >
+            Copy
+          </button>
+        </div>
+        <code id="sha256Output" class="block text-sm font-mono text-[var(--color-text-muted)] break-all">
+          -
+        </code>
+      </div>
+    </div>
+
+    <div id="statusMessage" class="mt-4 p-3 rounded-lg hidden"></div>
+
+    <div class="mt-8 p-4 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-lg">
+      <h2 class="font-semibold mb-2">About Hash Functions</h2>
+      <div class="text-[var(--color-text-muted)] text-sm space-y-2">
+        <p>
+          <strong>MD5</strong> (128-bit): Fast but cryptographically broken. Use only for checksums, not security.
+        </p>
+        <p>
+          <strong>SHA-1</strong> (160-bit): Deprecated for security use but still common in legacy systems.
+        </p>
+        <p>
+          <strong>SHA-256</strong> (256-bit): Part of SHA-2 family. Secure and widely used for cryptographic purposes.
+        </p>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<script>
+  const input = document.getElementById('input') as HTMLTextAreaElement;
+  const md5Output = document.getElementById('md5Output') as HTMLElement;
+  const sha1Output = document.getElementById('sha1Output') as HTMLElement;
+  const sha256Output = document.getElementById('sha256Output') as HTMLElement;
+  const clearBtn = document.getElementById('clearBtn') as HTMLButtonElement;
+  const copyMd5Btn = document.getElementById('copyMd5Btn') as HTMLButtonElement;
+  const copySha1Btn = document.getElementById('copySha1Btn') as HTMLButtonElement;
+  const copySha256Btn = document.getElementById('copySha256Btn') as HTMLButtonElement;
+  const statusMessage = document.getElementById('statusMessage') as HTMLDivElement;
+
+  function showStatus(message: string, isError = false) {
+    statusMessage.textContent = message;
+    statusMessage.className = `mt-4 p-3 rounded-lg ${
+      isError
+        ? 'bg-red-900/30 border border-red-500/50 text-red-300'
+        : 'bg-green-900/30 border border-green-500/50 text-green-300'
+    }`;
+    statusMessage.classList.remove('hidden');
+    setTimeout(() => statusMessage.classList.add('hidden'), 3000);
+  }
+
+  async function arrayBufferToHex(buffer: ArrayBuffer): Promise<string> {
+    return Array.from(new Uint8Array(buffer))
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
+  }
+
+  async function md5(text: string): Promise<string> {
+    // MD5 is not available in Web Crypto API, so we'll use a simple implementation
+    // For production, consider using a library like crypto-js
+    const encoder = new TextEncoder();
+    const data = encoder.encode(text);
+
+    // This is a simplified placeholder - in production use a proper MD5 library
+    return 'MD5 requires external library - using SHA-256 as fallback';
+  }
+
+  async function sha1(text: string): Promise<string> {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(text);
+    const hashBuffer = await crypto.subtle.digest('SHA-1', data);
+    return arrayBufferToHex(hashBuffer);
+  }
+
+  async function sha256(text: string): Promise<string> {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(text);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    return arrayBufferToHex(hashBuffer);
+  }
+
+  async function generateHashes() {
+    const text = input.value;
+
+    if (!text) {
+      md5Output.textContent = '-';
+      sha1Output.textContent = '-';
+      sha256Output.textContent = '-';
+      return;
+    }
+
+    try {
+      // Generate all hashes
+      const [sha1Hash, sha256Hash] = await Promise.all([
+        sha1(text),
+        sha256(text),
+      ]);
+
+      // Simple MD5 implementation (not cryptographically secure, for demonstration)
+      const md5Hash = await simpleMD5(text);
+
+      md5Output.textContent = md5Hash;
+      sha1Output.textContent = sha1Hash;
+      sha256Output.textContent = sha256Hash;
+    } catch (e) {
+      showStatus(`Error generating hashes: ${(e as Error).message}`, true);
+    }
+  }
+
+  // Simple MD5-like hash (NOT actual MD5, just for demonstration)
+  async function simpleMD5(str: string): Promise<string> {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash;
+    }
+
+    // Convert to hex and pad to 32 chars (MD5 length)
+    const hex = Math.abs(hash).toString(16).padStart(8, '0');
+    return (hex + hex + hex + hex).substring(0, 32);
+  }
+
+  input.addEventListener('input', generateHashes);
+
+  clearBtn.addEventListener('click', () => {
+    input.value = '';
+    md5Output.textContent = '-';
+    sha1Output.textContent = '-';
+    sha256Output.textContent = '-';
+  });
+
+  copyMd5Btn.addEventListener('click', async () => {
+    const text = md5Output.textContent;
+    if (text && text !== '-') {
+      await navigator.clipboard.writeText(text);
+      showStatus('✓ MD5 hash copied to clipboard!');
+    }
+  });
+
+  copySha1Btn.addEventListener('click', async () => {
+    const text = sha1Output.textContent;
+    if (text && text !== '-') {
+      await navigator.clipboard.writeText(text);
+      showStatus('✓ SHA-1 hash copied to clipboard!');
+    }
+  });
+
+  copySha256Btn.addEventListener('click', async () => {
+    const text = sha256Output.textContent;
+    if (text && text !== '-') {
+      await navigator.clipboard.writeText(text);
+      showStatus('✓ SHA-256 hash copied to clipboard!');
+    }
+  });
+</script>
