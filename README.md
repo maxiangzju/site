@@ -14,8 +14,9 @@ A personal website built with **Astro** and **Tailwind CSS**, featuring an ocean
 
 - ✅ Blue ocean themed design with dark navy background
 - ✅ WebGL animated header/footer (beach wave effect)
-- ✅ View Transitions for seamless navigation (animations persist across pages)
-- ✅ Wave animation - one-way ocean waves flowing toward shore, thinning as they approach
+- ✅ View Transitions for seamless navigation
+- ✅ Optimized page transitions (WebGL persists across navigation via `astro:page-load`)
+- ✅ Wave animation - one-way ocean waves flowing toward shore
 
 ## Project Structure
 
@@ -45,7 +46,6 @@ site/
 ├── public/
 │   └── metaball-animation.js          # WebGL beach wave shader
 ├── astro.config.mjs
-├── wrangler.toml                      # Cloudflare config
 └── package.json
 ```
 
@@ -60,20 +60,9 @@ site/
 
 ## Deployment
 
-### Cloudflare Pages
+Deployed on **Cloudflare Pages** with GitHub integration at [site-evx.pages.dev](https://site-evx.pages.dev).
 
-1. Push to GitHub
-2. Connect repo in Cloudflare Pages dashboard
-3. Configure:
-   - Build command: `npm run build`
-   - Output directory: `dist`
-   - Framework preset: Astro
-
-Or deploy manually:
-```bash
-npm run build
-npx wrangler pages deploy dist
-```
+Auto-deploys on push to `main` branch.
 
 ## Game Engine Architecture
 
