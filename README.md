@@ -60,9 +60,10 @@ site/
 
 ## Deployment
 
-Deployed on **Cloudflare Pages** with GitHub integration at [site-evx.pages.dev](https://site-evx.pages.dev).
+Deployed on **Cloudflare Pages** with GitHub integration. Auto-deploys on push to `main` branch.
 
-Auto-deploys on push to `main` branch.
+- **Primary**: [xiangma.us](https://xiangma.us)
+- **Fallback**: [site-evx.pages.dev](https://site-evx.pages.dev)
 
 ## Game Engine Architecture
 
