@@ -5,7 +5,9 @@ A personal website built with **Astro** and **Tailwind CSS**, featuring an ocean
 ## Features
 
 - **Blog** - Markdown/MDX posts with content collections
-- **Game** - Canvas-based web game with pluggable engine architecture
+- **Games** - Multiple canvas-based games with pluggable engine architecture
+  - Tank Battle - Top-down tank combat with AI enemies and wave progression
+  - Bouncing Balls - Physics demo
 - **Tools** - Online developer utilities (coming soon)
 - **Algo-Viz** - LeetCode-style algorithm visualizations (coming soon)
 - **Ocean Theme** - Dark navy color scheme with WebGL wave animations
@@ -28,17 +30,18 @@ site/
 │   │   ├── MetaballHeader.astro       # WebGL wave header canvas
 │   │   ├── MetaballFooter.astro       # WebGL wave footer canvas
 │   │   └── game/
-│   │       ├── GameCanvas.astro       # Game wrapper component
+│   │       ├── GameCanvas.astro       # Bouncing balls game component
+│   │       ├── TankGameCanvas.astro   # Tank battle game component
 │   │       └── engines/               # Pluggable game engines
 │   │           ├── types.ts           # GameEngine interface
 │   │           ├── canvas2d.ts        # 2D Canvas renderer
-│   │           └── three.ts           # Three.js placeholder
+│   │           └── tank/              # Tank game engine (entities, systems, map)
 │   ├── content/
 │   │   └── blog/                      # Blog posts (markdown/MDX)
 │   ├── pages/
 │   │   ├── index.astro                # Home page
 │   │   ├── blog/                      # Blog listing + posts
-│   │   ├── game.astro                 # Game page
+│   │   ├── game/                      # Game listing + individual games
 │   │   ├── tools/                     # Tools section
 │   │   └── algo-viz/                  # Algorithm visualizations
 │   └── styles/
