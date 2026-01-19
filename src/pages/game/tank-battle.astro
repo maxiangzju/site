@@ -1,0 +1,83 @@
+---
+import BaseLayout from '../../components/layout/BaseLayout.astro';
+import TankGameCanvas from '../../components/game/TankGameCanvas.astro';
+---
+
+<BaseLayout title="Tank Battle | Games | My Site">
+  <div class="max-w-4xl mx-auto px-4 py-16">
+    <nav class="mb-8">
+      <a href="/game" class="text-[var(--color-primary)] hover:underline flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+        Back to Games
+      </a>
+    </nav>
+
+    <h1 class="text-3xl font-bold mb-4">Tank Battle</h1>
+    <p class="text-[var(--color-text-muted)] mb-8">
+      A top-down tank combat game. Survive waves of AI enemies using your light cone to spot them in the darkness!
+    </p>
+
+    <TankGameCanvas />
+
+    <section class="mt-12 border-t border-[var(--color-border)] pt-8">
+      <h2 class="text-xl font-semibold mb-4">Controls</h2>
+      <div class="grid md:grid-cols-2 gap-6">
+        <div>
+          <h3 class="font-semibold mb-2 text-[var(--color-text)]">Movement</h3>
+          <ul class="text-[var(--color-text-muted)] space-y-1">
+            <li><kbd class="key">W</kbd> - Move up</li>
+            <li><kbd class="key">S</kbd> - Move down</li>
+            <li><kbd class="key">A</kbd> - Move left</li>
+            <li><kbd class="key">D</kbd> - Move right</li>
+          </ul>
+        </div>
+        <div>
+          <h3 class="font-semibold mb-2 text-[var(--color-text)]">Combat & Menu</h3>
+          <ul class="text-[var(--color-text-muted)] space-y-1">
+            <li><kbd class="key">Mouse</kbd> - Aim turret</li>
+            <li><kbd class="key">Left Click</kbd> - Fire</li>
+            <li><kbd class="key">P</kbd> / <kbd class="key">ESC</kbd> - Pause</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="mt-8 border-t border-[var(--color-border)] pt-8">
+      <h2 class="text-xl font-semibold mb-4">Game Features</h2>
+      <ul class="list-disc list-inside text-[var(--color-text-muted)] space-y-2">
+        <li><strong>Light Cones</strong> - Both you and enemies have spotlights that illuminate the darkness</li>
+        <li><strong>Aim Line</strong> - A dotted line shows where your turret is aiming</li>
+        <li><strong>AI Enemies</strong> - Enemy tanks patrol, chase, and attack when they spot you</li>
+        <li><strong>Wave System</strong> - Survive 5 waves of increasing difficulty</li>
+        <li><strong>Visual Effects</strong> - Explosions, hit sparks, and muzzle flashes add excitement</li>
+        <li><strong>3D Effects</strong> - Shadows and lighting create depth in the 2D view</li>
+      </ul>
+    </section>
+
+    <section class="mt-8 border-t border-[var(--color-border)] pt-8">
+      <h2 class="text-xl font-semibold mb-4">Tips</h2>
+      <ul class="list-disc list-inside text-[var(--color-text-muted)] space-y-2">
+        <li>Use walls for cover - bullets can't pass through them</li>
+        <li>Keep moving to avoid enemy fire</li>
+        <li>Your light cone reveals enemies, but they can also see you</li>
+        <li>Enemies deal less damage than you - use this advantage</li>
+        <li>Waves get progressively harder with more enemies and smarter AI</li>
+      </ul>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .key {
+    display: inline-block;
+    padding: 0.2rem 0.5rem;
+    font-family: monospace;
+    font-size: 0.85rem;
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  }
+</style>

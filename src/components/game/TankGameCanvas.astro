@@ -1,0 +1,227 @@
+---
+interface Props {
+  width?: number;
+  height?: number;
+}
+
+const { width = 1000, height = 700 } = Astro.props;
+---
+
+<div class="tank-game-container" id="tank-game-wrapper">
+  <canvas
+    id="tank-game-canvas"
+    width={width}
+    height={height}
+    class="rounded-lg shadow-lg cursor-crosshair"
+  ></canvas>
+  <div class="controls mt-4 flex gap-4 items-center flex-wrap justify-center">
+    <button id="tank-start-btn" class="px-4 py-2 bg-[var(--color-primary)] text-white rounded hover:bg-[var(--color-primary-dark)] transition-colors">
+      Start
+    </button>
+    <button id="tank-pause-btn" class="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700 transition-colors">
+      Pause
+    </button>
+    <button id="tank-restart-btn" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors">
+      Restart
+    </button>
+    <button id="tank-fullscreen-btn" class="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors flex items-center gap-2">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+      </svg>
+      <span>Fullscreen</span>
+    </button>
+    <button id="tank-autofire-btn" class="px-4 py-2 bg-orange-600 text-white rounded hover:bg-orange-700 transition-colors flex items-center gap-2">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="22" y1="12" x2="18" y2="12"></line>
+        <line x1="6" y1="12" x2="2" y2="12"></line>
+        <line x1="12" y1="6" x2="12" y2="2"></line>
+        <line x1="12" y1="22" x2="12" y2="18"></line>
+      </svg>
+      <span>Auto-Fire: OFF</span>
+    </button>
+  </div>
+</div>
+
+<script>
+  import { TankGameEngine } from './engines/tank/TankGameEngine';
+
+  let engine: TankGameEngine | null = null;
+  let isFullscreen = false;
+
+  function initTankGame() {
+    // Clean up previous instance if it exists
+    if (engine) {
+      engine.dispose();
+    }
+
+    const canvas = document.getElementById('tank-game-canvas') as HTMLCanvasElement;
+    const wrapper = document.getElementById('tank-game-wrapper');
+    const startBtn = document.getElementById('tank-start-btn');
+    const pauseBtn = document.getElementById('tank-pause-btn');
+    const restartBtn = document.getElementById('tank-restart-btn');
+    const fullscreenBtn = document.getElementById('tank-fullscreen-btn');
+
+    const autofireBtn = document.getElementById('tank-autofire-btn');
+
+    if (!canvas || !startBtn || !pauseBtn || !restartBtn || !fullscreenBtn || !wrapper || !autofireBtn) return;
+
+    // Create and initialize engine
+    engine = new TankGameEngine();
+    engine.init(canvas);
+
+    // Handle resize
+    function handleResize() {
+      if (!engine) return;
+
+      if (isFullscreen) {
+        // In fullscreen, use full window size
+        const width = window.innerWidth;
+        const height = window.innerHeight - 60; // Leave space for controls
+        canvas.width = width;
+        canvas.height = height;
+        engine.resize(width, height);
+      } else {
+        const container = canvas.parentElement;
+        if (container) {
+          const rect = container.getBoundingClientRect();
+          const width = Math.min(rect.width - 32, 1000);
+          const height = Math.round(width * 0.7);
+          canvas.width = width;
+          canvas.height = height;
+          engine.resize(width, height);
+        }
+      }
+    }
+
+    window.addEventListener('resize', handleResize);
+    handleResize();
+
+    // Control buttons
+    startBtn.addEventListener('click', () => {
+      if (engine) {
+        engine.start();
+      }
+    });
+
+    pauseBtn.addEventListener('click', () => {
+      if (engine) {
+        const state = engine.getState();
+        engine.setPaused(!state.isPaused);
+        pauseBtn.textContent = state.isPaused ? 'Pause' : 'Resume';
+      }
+    });
+
+    restartBtn.addEventListener('click', () => {
+      if (engine) {
+        engine.dispose();
+        engine = new TankGameEngine();
+        engine.init(canvas);
+        engine.start();
+        pauseBtn.textContent = 'Pause';
+      }
+    });
+
+    // Fullscreen toggle
+    function updateFullscreenButton() {
+      const btnText = fullscreenBtn.querySelector('span');
+      if (btnText) {
+        btnText.textContent = isFullscreen ? 'Exit Fullscreen' : 'Fullscreen';
+      }
+    }
+
+    fullscreenBtn.addEventListener('click', async () => {
+      try {
+        if (!document.fullscreenElement) {
+          await wrapper.requestFullscreen();
+          isFullscreen = true;
+        } else {
+          await document.exitFullscreen();
+          isFullscreen = false;
+        }
+        updateFullscreenButton();
+        handleResize();
+      } catch (err) {
+        console.error('Fullscreen error:', err);
+      }
+    });
+
+    // Handle fullscreen change from escape key etc
+    document.addEventListener('fullscreenchange', () => {
+      isFullscreen = !!document.fullscreenElement;
+      updateFullscreenButton();
+      handleResize();
+    });
+
+    // Auto-fire toggle
+    let autoFireEnabled = false;
+    autofireBtn.addEventListener('click', () => {
+      autoFireEnabled = !autoFireEnabled;
+      if (engine) {
+        engine.setAutoFire(autoFireEnabled);
+      }
+      const btnText = autofireBtn.querySelector('span');
+      if (btnText) {
+        btnText.textContent = autoFireEnabled ? 'Auto-Fire: ON' : 'Auto-Fire: OFF';
+      }
+      autofireBtn.classList.toggle('bg-green-600', autoFireEnabled);
+      autofireBtn.classList.toggle('hover:bg-green-700', autoFireEnabled);
+      autofireBtn.classList.toggle('bg-orange-600', !autoFireEnabled);
+      autofireBtn.classList.toggle('hover:bg-orange-700', !autoFireEnabled);
+    });
+
+    // Auto-start
+    engine.start();
+
+    // Cleanup on navigation
+    document.addEventListener('astro:before-swap', () => {
+      if (engine) {
+        engine.dispose();
+        engine = null;
+      }
+      window.removeEventListener('resize', handleResize);
+    }, { once: true });
+  }
+
+  // Initialize on page load
+  initTankGame();
+
+  // Re-initialize on Astro page transitions
+  document.addEventListener('astro:after-swap', initTankGame);
+</script>
+
+<style>
+  .tank-game-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .tank-game-container:fullscreen {
+    background: #0a0a1e;
+    padding: 0;
+    justify-content: flex-start;
+  }
+
+  .tank-game-container:fullscreen .controls {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.8);
+    padding: 10px;
+    margin: 0;
+    z-index: 100;
+    justify-content: center;
+  }
+
+  .tank-game-container:fullscreen #tank-game-canvas {
+    border-radius: 0;
+  }
+
+  #tank-game-canvas {
+    max-width: 100%;
+    height: auto;
+    background: #1a1a2e;
+  }
+</style>

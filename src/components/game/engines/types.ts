@@ -25,4 +25,26 @@ export interface GameState {
   isPaused: boolean;
 }
 
-export type EngineType = 'canvas2d' | 'three';
+export interface TankGameState extends GameState {
+  playerHealth: number;
+  maxHealth: number;
+  enemiesKilled: number;
+  wave: number;
+  gameOver: boolean;
+  victory: boolean;
+}
+
+export interface Rectangle {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface Circle {
+  x: number;
+  y: number;
+  radius: number;
+}
+
+export type EngineType = 'canvas2d' | 'three' | 'tank';
