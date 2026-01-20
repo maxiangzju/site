@@ -210,39 +210,13 @@ const { width = 1000, height = 700 } = Astro.props;
     }
 
     fullscreenBtn.addEventListener('click', async () => {
-      if (mobile) {
-        // On mobile, use CSS-based fullscreen
-        toggleMobileFullscreen();
-      } else {
-        // On desktop, use native Fullscreen API
-        try {
-          if (!document.fullscreenElement) {
-            await wrapper.requestFullscreen();
-            isFullscreen = true;
-          } else {
-            await document.exitFullscreen();
-            isFullscreen = false;
-          }
-          updateFullscreenButton();
-          handleResize();
-        } catch (err) {
-          console.error('Fullscreen error:', err);
-        }
-      }
+      // Always use CSS-based fullscreen (more reliable across devices)
+      toggleMobileFullscreen();
     });
 
-    // Handle fullscreen change from escape key etc (desktop only)
-    document.addEventListener('fullscreenchange', () => {
-      if (!mobile) {
-        isFullscreen = !!document.fullscreenElement;
-        updateFullscreenButton();
-        handleResize();
-      }
-    });
-
-    // Handle back button / escape on mobile fullscreen
+    // Handle escape key to exit fullscreen
     function handleKeyDown(e: KeyboardEvent) {
-      if (mobile && isFullscreen && (e.key === 'Escape' || e.key === 'Backspace')) {
+      if (isFullscreen && (e.key === 'Escape')) {
         e.preventDefault();
         toggleMobileFullscreen();
       }
@@ -418,14 +392,21 @@ const { width = 1000, height = 700 } = Astro.props;
     background: #0a0a1e !important;
     padding: 0 !important;
     margin: 0 !important;
-    justify-content: flex-start !important;
     overflow: hidden !important;
+    /* Ensure flex display is preserved */
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
   }
 
   .mobile-fullscreen #tank-game-canvas {
-    border-radius: 0;
+    border-radius: 0 !important;
+    flex: 1 !important;
+    width: 100vw !important;
     max-width: 100vw !important;
     max-height: calc(100vh - 60px) !important;
+    object-fit: contain !important;
   }
 
   .mobile-fullscreen .controls {
@@ -433,11 +414,19 @@ const { width = 1000, height = 700 } = Astro.props;
     bottom: 0 !important;
     left: 0 !important;
     right: 0 !important;
+    width: 100% !important;
     background: rgba(0, 0, 0, 0.95) !important;
     padding: 10px !important;
     margin: 0 !important;
     z-index: 100000 !important;
+    display: flex !important;
     justify-content: center !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+
+  .mobile-fullscreen .mobile-hints {
+    z-index: 100001 !important;
   }
 </style>
 
