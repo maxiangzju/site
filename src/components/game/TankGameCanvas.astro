@@ -204,25 +204,22 @@ const { width = 1000, height = 700 } = Astro.props;
         document.body.classList.add('game-fullscreen');
         wrapper.classList.add('mobile-fullscreen');
 
-        // On mobile, try to use native fullscreen + lock to landscape
-        if (mobile) {
-          try {
-            // Request native fullscreen (required for orientation lock on most browsers)
-            await wrapper.requestFullscreen();
+        try {
+          // Request native fullscreen for both mobile and desktop
+          await wrapper.requestFullscreen();
 
-            // Try to lock orientation to landscape
-            if (screen.orientation && screen.orientation.lock) {
-              try {
-                await screen.orientation.lock('landscape');
-              } catch (e) {
-                // Orientation lock not supported or failed - continue anyway
-                console.log('Orientation lock not available');
-              }
+          // On mobile, also try to lock orientation to landscape
+          if (mobile && screen.orientation && screen.orientation.lock) {
+            try {
+              await screen.orientation.lock('landscape');
+            } catch (e) {
+              // Orientation lock not supported or failed - continue anyway
+              console.log('Orientation lock not available');
             }
-          } catch (e) {
-            // Native fullscreen failed - CSS fullscreen will still work
-            console.log('Native fullscreen not available, using CSS fallback');
           }
+        } catch (e) {
+          // Native fullscreen failed - CSS fullscreen will still work
+          console.log('Native fullscreen not available, using CSS fallback');
         }
 
         updateFullscreenButton();
@@ -233,8 +230,8 @@ const { width = 1000, height = 700 } = Astro.props;
         document.body.classList.remove('game-fullscreen');
         wrapper.classList.remove('mobile-fullscreen');
 
-        // Unlock orientation
-        if (screen.orientation && screen.orientation.unlock) {
+        // Unlock orientation on mobile
+        if (mobile && screen.orientation && screen.orientation.unlock) {
           try {
             screen.orientation.unlock();
           } catch (e) {
