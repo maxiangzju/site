@@ -37,13 +37,13 @@ const { width = 1000, height = 700 } = Astro.props;
     <button id="tank-restart-btn" class="btn-control bg-gray-600 hover:bg-gray-700">
       Restart
     </button>
-    <button id="tank-fullscreen-btn" class="btn-control bg-purple-600 hover:bg-purple-700 desktop-only">
+    <button id="tank-fullscreen-btn" class="btn-control bg-purple-600 hover:bg-purple-700">
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
       </svg>
       <span>Fullscreen</span>
     </button>
-    <button id="tank-autofire-btn" class="btn-control bg-orange-600 hover:bg-orange-700">
+    <button id="tank-autofire-btn" class="btn-control bg-green-600 hover:bg-green-700">
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="10"></circle>
         <line x1="22" y1="12" x2="18" y2="12"></line>
@@ -51,7 +51,7 @@ const { width = 1000, height = 700 } = Astro.props;
         <line x1="12" y1="6" x2="12" y2="2"></line>
         <line x1="12" y1="22" x2="12" y2="18"></line>
       </svg>
-      <span class="btn-text">Auto-Fire: OFF</span>
+      <span class="btn-text">Auto: ON</span>
     </button>
   </div>
 </div>
@@ -61,7 +61,7 @@ const { width = 1000, height = 700 } = Astro.props;
 
   let engine: TankGameEngine | null = null;
   let isFullscreen = false;
-  let autoFireEnabled = false;
+  let autoFireEnabled = true; // Auto-fire on by default
 
   function isMobile(): boolean {
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
@@ -104,12 +104,9 @@ const { width = 1000, height = 700 } = Astro.props;
     // Detect mobile and show hints
     const mobile = isMobile();
 
-    // Auto-enable auto-fire on mobile for better experience
-    if (mobile) {
-      autoFireEnabled = true;
-      engine.setAutoFire(true);
-      updateAutoFireButton();
-    }
+    // Enable auto-fire by default (already true, just sync with engine)
+    engine.setAutoFire(autoFireEnabled);
+    updateAutoFireButton();
 
     // Show mobile hints briefly on touch devices
     if (mobile && mobileHints) {
@@ -199,28 +196,58 @@ const { width = 1000, height = 700 } = Astro.props;
       }
     }
 
-    fullscreenBtn.addEventListener('click', async () => {
-      try {
-        if (!document.fullscreenElement) {
-          await wrapper.requestFullscreen();
-          isFullscreen = true;
-        } else {
-          await document.exitFullscreen();
-          isFullscreen = false;
-        }
-        updateFullscreenButton();
+    // Enter/exit mobile fullscreen mode (CSS-based)
+    function toggleMobileFullscreen() {
+      isFullscreen = !isFullscreen;
+      document.body.classList.toggle('game-fullscreen', isFullscreen);
+      wrapper.classList.toggle('mobile-fullscreen', isFullscreen);
+      updateFullscreenButton();
+
+      // Resize after a short delay to let CSS take effect
+      setTimeout(() => {
         handleResize();
-      } catch (err) {
-        console.error('Fullscreen error:', err);
+      }, 50);
+    }
+
+    fullscreenBtn.addEventListener('click', async () => {
+      if (mobile) {
+        // On mobile, use CSS-based fullscreen
+        toggleMobileFullscreen();
+      } else {
+        // On desktop, use native Fullscreen API
+        try {
+          if (!document.fullscreenElement) {
+            await wrapper.requestFullscreen();
+            isFullscreen = true;
+          } else {
+            await document.exitFullscreen();
+            isFullscreen = false;
+          }
+          updateFullscreenButton();
+          handleResize();
+        } catch (err) {
+          console.error('Fullscreen error:', err);
+        }
       }
     });
 
-    // Handle fullscreen change from escape key etc
+    // Handle fullscreen change from escape key etc (desktop only)
     document.addEventListener('fullscreenchange', () => {
-      isFullscreen = !!document.fullscreenElement;
-      updateFullscreenButton();
-      handleResize();
+      if (!mobile) {
+        isFullscreen = !!document.fullscreenElement;
+        updateFullscreenButton();
+        handleResize();
+      }
     });
+
+    // Handle back button / escape on mobile fullscreen
+    function handleKeyDown(e: KeyboardEvent) {
+      if (mobile && isFullscreen && (e.key === 'Escape' || e.key === 'Backspace')) {
+        e.preventDefault();
+        toggleMobileFullscreen();
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown);
 
     autofireBtn.addEventListener('click', () => {
       autoFireEnabled = !autoFireEnabled;
@@ -240,6 +267,9 @@ const { width = 1000, height = 700 } = Astro.props;
         engine = null;
       }
       window.removeEventListener('resize', handleResize);
+      window.removeEventListener('keydown', handleKeyDown);
+      // Clean up mobile fullscreen state
+      document.body.classList.remove('game-fullscreen');
     }, { once: true });
   }
 
@@ -374,14 +404,54 @@ const { width = 1000, height = 700 } = Astro.props;
     }
   }
 
-  /* Hide fullscreen on mobile - doesn't work well */
-  .desktop-only {
-    display: none;
+  /* Mobile fullscreen mode (CSS-based) */
+  .mobile-fullscreen {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 9999;
+    background: #0a0a1e;
+    padding: 0;
+    margin: 0;
+    justify-content: flex-start;
   }
 
-  @media (min-width: 768px) {
-    .desktop-only {
-      display: flex;
-    }
+  .mobile-fullscreen #tank-game-canvas {
+    border-radius: 0;
+  }
+
+  .mobile-fullscreen .controls {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.9);
+    padding: 10px;
+    margin: 0;
+    z-index: 10000;
+    justify-content: center;
+  }
+</style>
+
+<style is:global>
+  /* Hide page elements when game is in mobile fullscreen */
+  body.game-fullscreen {
+    overflow: hidden !important;
+  }
+
+  body.game-fullscreen > *:not(.tank-game-container):not(script):not(style) {
+    display: none !important;
+  }
+
+  body.game-fullscreen header,
+  body.game-fullscreen nav,
+  body.game-fullscreen footer,
+  body.game-fullscreen .page-header,
+  body.game-fullscreen main > *:not(.tank-game-container) {
+    display: none !important;
   }
 </style>
