@@ -1,25 +1,27 @@
 ---
 title: "The Ralph Wiggum Technique: Running AI Coding Agents Overnight"
-description: "How to set up autonomous coding agents that work while you sleep, using the 'Ralph loop' pattern for long-running AI development sessions."
+description: "How I set up autonomous coding agents that work while I sleep, using the 'Ralph loop' pattern for long-running AI development sessions."
 pubDate: 2026-01-20
 tags: [ai, coding-agents, automation, claude, codex]
 ---
 
 # The Ralph Wiggum Technique: Running AI Coding Agents Overnight
 
-*"Me fail English? That's unpossible!" — Ralph Wiggum*
+I've been experimenting with running AI coding agents overnight, and I wanted to share a technique that's been circulating in the AI dev community — the "Ralph Wiggum" technique (or "Ralph loop").
 
-The "Ralph Wiggum" technique (or "Ralph loop") is a pattern for running AI coding agents autonomously over extended periods — even overnight while you sleep. Named after The Simpsons character (for reasons the AI community finds amusing), this approach lets you delegate complex coding tasks to AI agents that work continuously without supervision.
+The name comes from The Simpsons character, and honestly, I'm not 100% sure why it stuck, but the technique itself is genuinely useful.
 
-## What is a Ralph Loop?
+## What's a Ralph Loop?
 
-At its core, a Ralph loop is a `while true` wrapper around your coding agent that:
+The basic idea is simple: wrap your coding agent in a `while true` loop that:
 
-1. **Starts the agent** with a task
-2. **Lets it work** until it completes or runs out of context
-3. **Commits the work** to git
-4. **Restarts** with fresh context, picking up where it left off
-5. **Exits** when a completion condition is met
+1. Starts the agent with a task
+2. Lets it work until it completes or runs out of context
+3. Commits the work to git
+4. Restarts with fresh context
+5. Exits when done
+
+Here's what it looks like:
 
 ```bash
 while true; do
@@ -29,7 +31,6 @@ while true; do
   
   git add -A && git commit -m "Ralph progress $(date)"
   
-  # Check for completion signal
   if grep -q "COMPLETE" output.log; then
     echo "Ralph finished!"
     break
@@ -39,11 +40,11 @@ while true; do
 done
 ```
 
-## Key Components
+## The Key Parts I Learned
 
-### 1. Progress Tracking
+### Progress Tracking
 
-Maintain a `progress.txt` file that the agent appends to (never overwrites):
+I keep a `progress.txt` file that the agent appends to (never overwrites):
 
 ```
 [2026-01-19 02:15] Started authentication module
@@ -51,103 +52,57 @@ Maintain a `progress.txt` file that the agent appends to (never overwrites):
 [2026-01-19 03:30] Session management done, starting API endpoints
 ```
 
-Feed this into the agent's prompt so it knows what's been done across context resets.
+This way the agent knows what's been done even after context resets.
 
-### 2. Atomic Commits
+### Atomic Commits
 
-Each iteration MUST:
-- Pass all tests and type checks
-- Make a clean git commit
-- Not leave broken code for future iterations
+This is crucial — each iteration MUST pass all tests and type checks before committing. If you let broken code accumulate, future runs waste time debugging instead of building.
 
-This is critical — if you let broken code accumulate, future agent runs waste time debugging instead of building.
+### PRD-Based Scoping
 
-### 3. PRD-Based Scoping
+I ran into two problems early on:
 
-Two common problems with Ralph loops:
+1. The agent picks tasks that are too large and runs out of context
+2. It doesn't know when to stop
 
-1. **Agents pick tasks that are too large** — they run out of context window
-2. **Agents don't know when to stop**
-
-Solution: Use a structured PRD (Product Requirements Document) as a JSON file:
+My solution: use a JSON PRD file:
 
 ```json
 {
   "features": [
-    {
-      "id": "auth-login",
-      "description": "User can log in with email/password",
-      "priority": 1,
-      "passes": false
-    },
-    {
-      "id": "auth-logout", 
-      "description": "User can log out",
-      "priority": 2,
-      "passes": false
-    }
+    {"id": "auth-login", "description": "User can log in", "priority": 1, "passes": false},
+    {"id": "auth-logout", "description": "User can log out", "priority": 2, "passes": false}
   ]
 }
 ```
 
-Prompt the agent to:
-- Pick the **highest priority incomplete feature**
-- Work **only** on that feature
-- Update `passes: true` when done
+I prompt the agent to pick only the highest priority incomplete feature and update `passes: true` when done.
 
-### 4. Completion Signals
+## Beyond Basic Ralph
 
-Use a clear signal for the agent to indicate completion:
+I found this tweet from [@bffmike](https://x.com/bffmike) that resonated with me:
 
-```
-If there is no further work to be done, reply with <promise>COMPLETE</promise>
-```
+> "My @clawdbot drove my coding agents after I went to bed last night from 12:30–7am while I snoozed. MUCH better than a Ralph loop because you don't just give it a prompt about when to stop. Instead I've been talking to my agent ALL DAY about the project... It knows about the entire project history, all the headaches."
 
-Check for this in your loop to exit gracefully.
+The idea of having an orchestrator agent that's been "watching you all day" and can make intelligent decisions about what to work on next — that's the next level.
 
-## Beyond Basic Ralph: The Clawdbot Approach
+## Tools I've Been Using
 
-A more sophisticated approach uses an **orchestrator agent** that manages coding agents:
+- **Codex CLI** — Streams raw text in headless mode, easy to monitor
+- **Claude Code** — More capable but streams JSON
+- **pm2** — For running dev servers (tip from [@nbaschez](https://x.com/nbaschez))
 
-> "My @clawdbot drove my coding agents after I went to bed last night from 12:30–7am while I snoozed. MUCH better than a Ralph loop because you don't just give it a prompt about when to stop. Instead I've been talking to my agent ALL DAY about the project... It knows about the entire project history, all the headaches. It drives better than Ralph because it's been watching me all day."
-> — [@bffmike](https://x.com/bffmike/status/2012205710030127110)
+## My Takeaways
 
-The orchestrator:
-- Has full context of your project discussions
-- Makes intelligent decisions about what to work on
-- Can course-correct when things go wrong
-- Manages multiple coding agents in parallel
+1. **Start small** — Try it on a well-scoped task first
+2. **Set up CI** — Tests must run on every commit
+3. **Use git worktrees** — Keep main branch clean while experimenting
+4. **Check in the morning** — Review `progress.txt` and git history
 
-## Tool Recommendations
+The Ralph Wiggum technique isn't perfect, but it's a solid starting point for anyone wanting to let AI agents work while they sleep.
 
-### For Ralph Loops
-
-- **[Codex CLI](https://github.com/openai/codex)** — Streams raw text in headless mode, easy to monitor
-- **Claude Code** — More capable but streams JSON (harder to parse live)
-
-### For Orchestration
-
-- **[Clawdbot](https://github.com/bffmike/clawdbot)** — Personal AI assistant that can manage coding agents
-- **pm2** — Process manager for running dev servers (tip from [@nbaschez](https://x.com/nbaschez/status/2012986796179890617))
-
-## Getting Started
-
-1. **Start small** — Try a Ralph loop on a well-defined, scoped task first
-2. **Set up CI** — Make sure tests run on every commit
-3. **Use git worktrees** — Keep your main branch clean while Ralph experiments
-4. **Monitor progress** — Check `progress.txt` and git history in the morning
-
-## Conclusion
-
-The Ralph Wiggum technique democratizes overnight coding. Whether you use a simple bash loop or a sophisticated orchestrator, the key principles remain:
-
-- **Atomic commits** that always pass CI
-- **Progress tracking** that survives context resets  
-- **Clear scoping** via PRDs to prevent runaway tasks
-- **Completion signals** so the loop knows when to stop
-
-Now go forth and let Ralph work while you sleep! 🛌💻
+Now I just need to figure out how to make my agent brew coffee for when I wake up. 😄
 
 ---
 
-*References from my Twitter bookmarks and the AI coding community. Special thanks to the builders sharing their techniques publicly.*
+*Collected from various sources in the AI coding community. Thanks to everyone sharing their experiments publicly.*
