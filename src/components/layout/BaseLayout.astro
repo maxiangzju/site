@@ -37,10 +37,17 @@ const currentPath = Astro.url.pathname;
 
     <header class="bg-[var(--color-bg)]">
       <nav class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-        <a href="/" class="text-xl font-bold text-[var(--color-primary)]">
+        <!-- Logo: hidden on very small screens -->
+        <a href="/" class="text-xl font-bold text-[var(--color-primary)] hidden sm:block">
           Xiang's Island
         </a>
-        <ul class="flex gap-6">
+        <!-- Small icon/emoji for very small screens -->
+        <a href="/" class="text-xl font-bold text-[var(--color-primary)] sm:hidden">
+          🏝️
+        </a>
+        
+        <!-- Desktop nav -->
+        <ul class="hidden md:flex gap-6">
           {navItems.map(item => (
             <li>
               <a
@@ -57,7 +64,42 @@ const currentPath = Astro.url.pathname;
             </li>
           ))}
         </ul>
+
+        <!-- Hamburger button for mobile -->
+        <button 
+          id="menu-toggle" 
+          class="md:hidden p-2 text-[var(--color-text-muted)] hover:text-[var(--color-primary)]"
+          aria-label="Toggle menu"
+        >
+          <svg id="menu-icon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+          </svg>
+          <svg id="close-icon" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
       </nav>
+
+      <!-- Mobile menu dropdown -->
+      <div id="mobile-menu" class="hidden md:hidden bg-[var(--color-bg-secondary)] border-t border-[var(--color-border)]">
+        <ul class="px-4 py-2 space-y-2">
+          {navItems.map(item => (
+            <li>
+              <a
+                href={item.href}
+                class:list={[
+                  'block py-2 px-3 rounded transition-colors',
+                  currentPath === item.href || (item.href !== '/' && currentPath.startsWith(item.href))
+                    ? 'text-[var(--color-primary)] bg-[var(--color-bg)] font-medium'
+                    : 'text-[var(--color-text-muted)] hover:text-[var(--color-primary)] hover:bg-[var(--color-bg)]'
+                ]}
+              >
+                {item.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
     </header>
 
     <main class="flex-1">
@@ -73,6 +115,18 @@ const currentPath = Astro.url.pathname;
     <MetaballFooter />
 
     <script is:inline src="/metaball-animation.js"></script>
+    
+    <script is:inline>
+      document.getElementById('menu-toggle').addEventListener('click', function() {
+        const mobileMenu = document.getElementById('mobile-menu');
+        const menuIcon = document.getElementById('menu-icon');
+        const closeIcon = document.getElementById('close-icon');
+        
+        mobileMenu.classList.toggle('hidden');
+        menuIcon.classList.toggle('hidden');
+        closeIcon.classList.toggle('hidden');
+      });
+    </script>
   </body>
 </html>
 
