@@ -196,29 +196,90 @@ const { width = 1000, height = 700 } = Astro.props;
       }
     }
 
-    // Enter/exit mobile fullscreen mode (CSS-based)
-    function toggleMobileFullscreen() {
-      isFullscreen = !isFullscreen;
-      document.body.classList.toggle('game-fullscreen', isFullscreen);
-      wrapper.classList.toggle('mobile-fullscreen', isFullscreen);
-      updateFullscreenButton();
+    // Enter/exit fullscreen mode with landscape orientation on mobile
+    async function toggleFullscreen() {
+      if (!isFullscreen) {
+        // Entering fullscreen
+        isFullscreen = true;
+        document.body.classList.add('game-fullscreen');
+        wrapper.classList.add('mobile-fullscreen');
 
-      // Resize after a short delay to let CSS take effect
-      setTimeout(() => {
-        handleResize();
-      }, 50);
+        // On mobile, try to use native fullscreen + lock to landscape
+        if (mobile) {
+          try {
+            // Request native fullscreen (required for orientation lock on most browsers)
+            await wrapper.requestFullscreen();
+
+            // Try to lock orientation to landscape
+            if (screen.orientation && screen.orientation.lock) {
+              try {
+                await screen.orientation.lock('landscape');
+              } catch (e) {
+                // Orientation lock not supported or failed - continue anyway
+                console.log('Orientation lock not available');
+              }
+            }
+          } catch (e) {
+            // Native fullscreen failed - CSS fullscreen will still work
+            console.log('Native fullscreen not available, using CSS fallback');
+          }
+        }
+
+        updateFullscreenButton();
+        setTimeout(() => handleResize(), 100);
+      } else {
+        // Exiting fullscreen
+        isFullscreen = false;
+        document.body.classList.remove('game-fullscreen');
+        wrapper.classList.remove('mobile-fullscreen');
+
+        // Unlock orientation
+        if (screen.orientation && screen.orientation.unlock) {
+          try {
+            screen.orientation.unlock();
+          } catch (e) {
+            // Ignore unlock errors
+          }
+        }
+
+        // Exit native fullscreen if active
+        if (document.fullscreenElement) {
+          try {
+            await document.exitFullscreen();
+          } catch (e) {
+            // Ignore exit errors
+          }
+        }
+
+        updateFullscreenButton();
+        setTimeout(() => handleResize(), 100);
+      }
     }
 
     fullscreenBtn.addEventListener('click', async () => {
-      // Always use CSS-based fullscreen (more reliable across devices)
-      toggleMobileFullscreen();
+      await toggleFullscreen();
+    });
+
+    // Handle native fullscreen exit (e.g., user swipes down on mobile)
+    document.addEventListener('fullscreenchange', () => {
+      if (!document.fullscreenElement && isFullscreen) {
+        // User exited fullscreen externally
+        isFullscreen = false;
+        document.body.classList.remove('game-fullscreen');
+        wrapper.classList.remove('mobile-fullscreen');
+        if (screen.orientation && screen.orientation.unlock) {
+          try { screen.orientation.unlock(); } catch (e) {}
+        }
+        updateFullscreenButton();
+        setTimeout(() => handleResize(), 100);
+      }
     });
 
     // Handle escape key to exit fullscreen
     function handleKeyDown(e: KeyboardEvent) {
       if (isFullscreen && (e.key === 'Escape')) {
         e.preventDefault();
-        toggleMobileFullscreen();
+        toggleFullscreen();
       }
     }
     window.addEventListener('keydown', handleKeyDown);
