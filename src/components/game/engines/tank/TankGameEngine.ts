@@ -56,6 +56,11 @@ export class TankGameEngine implements GameEngine {
   // Auto-fire
   private autoFireEnabled = false;
 
+  // Virtual canvas size (game logic works at this resolution)
+  private readonly virtualWidth = 800;
+  private readonly virtualHeight = 560;
+  private scale = 1;
+
   /** Initialize the engine with a canvas element */
   init(canvas: HTMLCanvasElement): void {
     this.canvas = canvas;
@@ -82,8 +87,14 @@ export class TankGameEngine implements GameEngine {
 
   /** Initialize/reset game state */
   private initializeGame(): void {
-    // Create map
-    this.gameMap = new GameMap(this.canvas.width, this.canvas.height);
+    // Calculate scale based on canvas size
+    this.scale = Math.min(
+      this.canvas.width / this.virtualWidth,
+      this.canvas.height / this.virtualHeight
+    );
+
+    // Create map at virtual size (game logic works at this resolution)
+    this.gameMap = new GameMap(this.virtualWidth, this.virtualHeight);
 
     // Initialize remaining systems
     this.collisionSystem = new CollisionSystem(this.gameMap);
@@ -231,6 +242,13 @@ export class TankGameEngine implements GameEngine {
     // Process input
     this.player.processInput(input, deltaTime);
 
+    // Scale mouse position to virtual coordinates for aiming
+    const scaledMousePos = new Vector2(
+      input.mousePosition.x / this.scale,
+      input.mousePosition.y / this.scale
+    );
+    this.player.setAimTarget(scaledMousePos);
+
     // Move player
     const newPos = Vector2.add(
       this.player.position,
@@ -316,8 +334,8 @@ export class TankGameEngine implements GameEngine {
       const prevPos = bullet.position.clone();
       bullet.update(deltaTime);
 
-      // Check bounds
-      if (bullet.isOutOfBounds(this.canvas.width, this.canvas.height)) {
+      // Check bounds (use virtual dimensions)
+      if (bullet.isOutOfBounds(this.virtualWidth, this.virtualHeight)) {
         bullet.deactivate();
         continue;
       }
@@ -360,10 +378,10 @@ export class TankGameEngine implements GameEngine {
             if (killed) {
               // Create explosion effect
               this.particleSystem.createExplosion(enemy.position.x, enemy.position.y);
-              // Spawn fleeing person from destroyed tank (use obstacleWalls so they can exit map)
+              // Spawn fleeing person from destroyed tank (use virtual dimensions)
               this.particleSystem.createFleeingPerson(
                 enemy.position.x, enemy.position.y,
-                this.canvas.width, this.canvas.height,
+                this.virtualWidth, this.virtualHeight,
                 this.gameMap.obstacleWalls
               );
               this.state.enemiesKilled++;
@@ -382,10 +400,10 @@ export class TankGameEngine implements GameEngine {
           if (killed) {
             // Create explosion effect
             this.particleSystem.createExplosion(this.player.position.x, this.player.position.y);
-            // Spawn fleeing person from destroyed tank (use obstacleWalls so they can exit map)
+            // Spawn fleeing person from destroyed tank (use virtual dimensions)
             this.particleSystem.createFleeingPerson(
               this.player.position.x, this.player.position.y,
-              this.canvas.width, this.canvas.height,
+              this.virtualWidth, this.virtualHeight,
               this.gameMap.obstacleWalls
             );
             this.gameOver(false);
@@ -484,6 +502,10 @@ export class TankGameEngine implements GameEngine {
     // Clear canvas
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
+    // Apply scaling for game world rendering
+    ctx.save();
+    ctx.scale(this.scale, this.scale);
+
     // Render floor
     this.gameMap.renderFloor(ctx);
 
@@ -518,15 +540,17 @@ export class TankGameEngine implements GameEngine {
     // Render particles (on top of tanks)
     this.particleSystem.render(ctx);
 
-    // Render ambient darkness
+    // Render ambient darkness (needs scale for player position)
     if (this.player.isAlive) {
-      this.renderSystem.renderAmbientDarkness(this.player);
+      this.renderSystem.renderAmbientDarkness(this.player, this.scale);
     }
 
     // Render vignette
-    this.renderSystem.renderVignette();
+    this.renderSystem.renderVignette(this.scale);
 
-    // Render UI
+    ctx.restore();
+
+    // UI elements render at canvas scale (not virtual scale)
     this.renderSystem.renderHealthBar(this.state);
     this.renderSystem.renderScoreAndWave(this.state);
     this.renderSystem.renderControlsHint();
@@ -550,18 +574,14 @@ export class TankGameEngine implements GameEngine {
 
   /** Handle window/canvas resize */
   resize(width: number, height: number): void {
-    // Recreate map for new dimensions
-    this.gameMap = new GameMap(width, height);
-    this.collisionSystem.setGameMap(this.gameMap);
+    // Recalculate scale based on new canvas size
+    this.scale = Math.min(
+      width / this.virtualWidth,
+      height / this.virtualHeight
+    );
 
-    // Reposition player if out of bounds
-    this.collisionSystem.keepTankInBounds(this.player);
-
-    // Reposition enemies
-    for (const enemy of this.enemies) {
-      this.collisionSystem.keepTankInBounds(enemy);
-      enemy.generatePatrolPoints(this.gameMap.getPlayableBounds());
-    }
+    // Update render system with new canvas size
+    this.renderSystem = new RenderSystem(this.canvas, this.ctx);
   }
 
   /** Clean up resources */

@@ -20,14 +20,18 @@ export class RenderSystem {
   }
 
   /** Render ambient darkness with light cone cutout */
-  renderAmbientDarkness(player: PlayerTank): void {
+  renderAmbientDarkness(player: PlayerTank, scale: number = 1): void {
     const ctx = this.ctx;
+
+    // Calculate virtual dimensions (game logic coordinates)
+    const virtualWidth = this.canvas.width / scale;
+    const virtualHeight = this.canvas.height / scale;
 
     ctx.save();
 
-    // Create a path for the entire canvas
+    // Create a path for the entire virtual canvas
     ctx.beginPath();
-    ctx.rect(0, 0, this.canvas.width, this.canvas.height);
+    ctx.rect(0, 0, virtualWidth, virtualHeight);
 
     // Create light cone path (subtracted from darkness)
     const lightAngle = player.lightConeAngle;
@@ -51,11 +55,16 @@ export class RenderSystem {
   }
 
   /** Render vignette effect around edges */
-  renderVignette(): void {
+  renderVignette(scale: number = 1): void {
     const ctx = this.ctx;
-    const centerX = this.canvas.width / 2;
-    const centerY = this.canvas.height / 2;
-    const radius = Math.max(this.canvas.width, this.canvas.height) * 0.7;
+
+    // Calculate virtual dimensions (game logic coordinates)
+    const virtualWidth = this.canvas.width / scale;
+    const virtualHeight = this.canvas.height / scale;
+
+    const centerX = virtualWidth / 2;
+    const centerY = virtualHeight / 2;
+    const radius = Math.max(virtualWidth, virtualHeight) * 0.7;
 
     const gradient = ctx.createRadialGradient(
       centerX, centerY, radius * 0.5,
@@ -65,7 +74,7 @@ export class RenderSystem {
     gradient.addColorStop(1, 'rgba(0, 0, 0, 0.15)');
 
     ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    ctx.fillRect(0, 0, virtualWidth, virtualHeight);
   }
 
   /** Render player health bar in top-left */

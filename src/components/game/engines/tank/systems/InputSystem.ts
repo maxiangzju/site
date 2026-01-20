@@ -20,7 +20,7 @@ export interface InputState {
 }
 
 /**
- * Handles keyboard and mouse input for the tank game
+ * Handles keyboard, mouse, and touch input for the tank game
  */
 export class InputSystem {
   private state: InputState;
@@ -32,9 +32,20 @@ export class InputSystem {
   private mouseupHandler: (e: MouseEvent) => void;
   private contextmenuHandler: (e: MouseEvent) => void;
 
+  // Touch handlers
+  private touchstartHandler: (e: TouchEvent) => void;
+  private touchmoveHandler: (e: TouchEvent) => void;
+  private touchendHandler: (e: TouchEvent) => void;
+
   // Callbacks for one-shot events
   private onPauseToggle: (() => void) | null = null;
   private onFire: (() => void) | null = null;
+
+  // Touch state for virtual joystick
+  private joystickTouchId: number | null = null;
+  private joystickCenter: Vector2 = new Vector2();
+  private joystickCurrent: Vector2 = new Vector2();
+  private aimTouchId: number | null = null;
 
   constructor() {
     this.state = {
@@ -55,6 +66,9 @@ export class InputSystem {
     this.mousedownHandler = this.handleMouseDown.bind(this);
     this.mouseupHandler = this.handleMouseUp.bind(this);
     this.contextmenuHandler = (e) => e.preventDefault();
+    this.touchstartHandler = this.handleTouchStart.bind(this);
+    this.touchmoveHandler = this.handleTouchMove.bind(this);
+    this.touchendHandler = this.handleTouchEnd.bind(this);
   }
 
   /** Initialize input listeners on canvas */
@@ -70,6 +84,12 @@ export class InputSystem {
     canvas.addEventListener('mousedown', this.mousedownHandler);
     canvas.addEventListener('mouseup', this.mouseupHandler);
     canvas.addEventListener('contextmenu', this.contextmenuHandler);
+
+    // Touch events on canvas
+    canvas.addEventListener('touchstart', this.touchstartHandler, { passive: false });
+    canvas.addEventListener('touchmove', this.touchmoveHandler, { passive: false });
+    canvas.addEventListener('touchend', this.touchendHandler, { passive: false });
+    canvas.addEventListener('touchcancel', this.touchendHandler, { passive: false });
   }
 
   /** Clean up event listeners */
@@ -82,6 +102,10 @@ export class InputSystem {
       this.canvas.removeEventListener('mousedown', this.mousedownHandler);
       this.canvas.removeEventListener('mouseup', this.mouseupHandler);
       this.canvas.removeEventListener('contextmenu', this.contextmenuHandler);
+      this.canvas.removeEventListener('touchstart', this.touchstartHandler);
+      this.canvas.removeEventListener('touchmove', this.touchmoveHandler);
+      this.canvas.removeEventListener('touchend', this.touchendHandler);
+      this.canvas.removeEventListener('touchcancel', this.touchendHandler);
     }
   }
 
@@ -201,5 +225,129 @@ export class InputSystem {
     this.state.rotateRight = false;
     this.state.fire = false;
     this.state.mouseDown = false;
+    this.joystickTouchId = null;
+    this.aimTouchId = null;
+  }
+
+  /** Handle touch start - left side for joystick, right side for aim */
+  private handleTouchStart(e: TouchEvent): void {
+    if (!this.canvas) return;
+    e.preventDefault();
+
+    const rect = this.canvas.getBoundingClientRect();
+    const canvasWidth = rect.width;
+
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      const touch = e.changedTouches[i];
+      const touchX = touch.clientX - rect.left;
+      const touchY = touch.clientY - rect.top;
+
+      // Left half of screen - movement joystick
+      if (touchX < canvasWidth / 2 && this.joystickTouchId === null) {
+        this.joystickTouchId = touch.identifier;
+        this.joystickCenter.set(touchX, touchY);
+        this.joystickCurrent.set(touchX, touchY);
+      }
+      // Right half of screen - aim and fire
+      else if (touchX >= canvasWidth / 2) {
+        this.aimTouchId = touch.identifier;
+        // Scale touch position to canvas coordinates
+        const scaleX = this.canvas.width / rect.width;
+        const scaleY = this.canvas.height / rect.height;
+        this.state.mousePosition.set(touchX * scaleX, touchY * scaleY);
+        this.state.mouseDown = true;
+        this.onFire?.();
+      }
+    }
+  }
+
+  /** Handle touch move - update joystick or aim position */
+  private handleTouchMove(e: TouchEvent): void {
+    if (!this.canvas) return;
+    e.preventDefault();
+
+    const rect = this.canvas.getBoundingClientRect();
+
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      const touch = e.changedTouches[i];
+      const touchX = touch.clientX - rect.left;
+      const touchY = touch.clientY - rect.top;
+
+      if (touch.identifier === this.joystickTouchId) {
+        this.joystickCurrent.set(touchX, touchY);
+        this.updateJoystickState();
+      } else if (touch.identifier === this.aimTouchId) {
+        // Scale touch position to canvas coordinates
+        const scaleX = this.canvas.width / rect.width;
+        const scaleY = this.canvas.height / rect.height;
+        this.state.mousePosition.set(touchX * scaleX, touchY * scaleY);
+      }
+    }
+  }
+
+  /** Handle touch end - reset joystick or aim */
+  private handleTouchEnd(e: TouchEvent): void {
+    e.preventDefault();
+
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      const touch = e.changedTouches[i];
+
+      if (touch.identifier === this.joystickTouchId) {
+        this.joystickTouchId = null;
+        this.state.forward = false;
+        this.state.backward = false;
+        this.state.rotateLeft = false;
+        this.state.rotateRight = false;
+      } else if (touch.identifier === this.aimTouchId) {
+        this.aimTouchId = null;
+        this.state.mouseDown = false;
+      }
+    }
+  }
+
+  /** Update movement state based on joystick position */
+  private updateJoystickState(): void {
+    const dx = this.joystickCurrent.x - this.joystickCenter.x;
+    const dy = this.joystickCurrent.y - this.joystickCenter.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+
+    // Dead zone
+    const deadZone = 15;
+    if (distance < deadZone) {
+      this.state.forward = false;
+      this.state.backward = false;
+      this.state.rotateLeft = false;
+      this.state.rotateRight = false;
+      return;
+    }
+
+    // Normalize and apply thresholds
+    const threshold = 0.3;
+    const normalizedX = dx / Math.max(distance, 50);
+    const normalizedY = dy / Math.max(distance, 50);
+
+    // Forward/backward based on Y axis
+    this.state.forward = normalizedY < -threshold;
+    this.state.backward = normalizedY > threshold;
+
+    // Rotation based on X axis
+    this.state.rotateLeft = normalizedX < -threshold;
+    this.state.rotateRight = normalizedX > threshold;
+  }
+
+  /** Get joystick state for rendering virtual joystick UI */
+  getJoystickState(): { active: boolean; centerX: number; centerY: number; currentX: number; currentY: number } {
+    return {
+      active: this.joystickTouchId !== null,
+      centerX: this.joystickCenter.x,
+      centerY: this.joystickCenter.y,
+      currentX: this.joystickCurrent.x,
+      currentY: this.joystickCurrent.y,
+    };
+  }
+
+  /** Check if touch input is being used */
+  isTouchActive(): boolean {
+    return this.joystickTouchId !== null || this.aimTouchId !== null;
   }
 }

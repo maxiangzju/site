@@ -14,23 +14,36 @@ const { width = 1000, height = 700 } = Astro.props;
     height={height}
     class="rounded-lg shadow-lg cursor-crosshair"
   ></canvas>
-  <div class="controls mt-4 flex gap-4 items-center flex-wrap justify-center">
-    <button id="tank-start-btn" class="px-4 py-2 bg-[var(--color-primary)] text-white rounded hover:bg-[var(--color-primary-dark)] transition-colors">
+
+  <!-- Mobile touch hints overlay -->
+  <div id="mobile-hints" class="mobile-hints hidden">
+    <div class="hint-left">
+      <div class="hint-circle"></div>
+      <span>MOVE</span>
+    </div>
+    <div class="hint-right">
+      <div class="hint-circle"></div>
+      <span>AIM & FIRE</span>
+    </div>
+  </div>
+
+  <div class="controls mt-4 flex gap-2 sm:gap-4 items-center flex-wrap justify-center">
+    <button id="tank-start-btn" class="btn-control bg-[var(--color-primary)] hover:bg-[var(--color-primary-dark)]">
       Start
     </button>
-    <button id="tank-pause-btn" class="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700 transition-colors">
+    <button id="tank-pause-btn" class="btn-control bg-yellow-600 hover:bg-yellow-700">
       Pause
     </button>
-    <button id="tank-restart-btn" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors">
+    <button id="tank-restart-btn" class="btn-control bg-gray-600 hover:bg-gray-700">
       Restart
     </button>
-    <button id="tank-fullscreen-btn" class="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors flex items-center gap-2">
+    <button id="tank-fullscreen-btn" class="btn-control bg-purple-600 hover:bg-purple-700 desktop-only">
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
       </svg>
       <span>Fullscreen</span>
     </button>
-    <button id="tank-autofire-btn" class="px-4 py-2 bg-orange-600 text-white rounded hover:bg-orange-700 transition-colors flex items-center gap-2">
+    <button id="tank-autofire-btn" class="btn-control bg-orange-600 hover:bg-orange-700">
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="10"></circle>
         <line x1="22" y1="12" x2="18" y2="12"></line>
@@ -38,7 +51,7 @@ const { width = 1000, height = 700 } = Astro.props;
         <line x1="12" y1="6" x2="12" y2="2"></line>
         <line x1="12" y1="22" x2="12" y2="18"></line>
       </svg>
-      <span>Auto-Fire: OFF</span>
+      <span class="btn-text">Auto-Fire: OFF</span>
     </button>
   </div>
 </div>
@@ -48,6 +61,12 @@ const { width = 1000, height = 700 } = Astro.props;
 
   let engine: TankGameEngine | null = null;
   let isFullscreen = false;
+  let autoFireEnabled = false;
+
+  function isMobile(): boolean {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+      || window.innerWidth < 768;
+  }
 
   function initTankGame() {
     // Clean up previous instance if it exists
@@ -61,14 +80,48 @@ const { width = 1000, height = 700 } = Astro.props;
     const pauseBtn = document.getElementById('tank-pause-btn');
     const restartBtn = document.getElementById('tank-restart-btn');
     const fullscreenBtn = document.getElementById('tank-fullscreen-btn');
-
     const autofireBtn = document.getElementById('tank-autofire-btn');
+    const mobileHints = document.getElementById('mobile-hints');
 
     if (!canvas || !startBtn || !pauseBtn || !restartBtn || !fullscreenBtn || !wrapper || !autofireBtn) return;
+
+    // Define updateAutoFireButton early so it can be used below
+    function updateAutoFireButton() {
+      const btnText = autofireBtn.querySelector('.btn-text');
+      if (btnText) {
+        btnText.textContent = autoFireEnabled ? 'Auto: ON' : 'Auto: OFF';
+      }
+      autofireBtn.classList.toggle('bg-green-600', autoFireEnabled);
+      autofireBtn.classList.toggle('hover:bg-green-700', autoFireEnabled);
+      autofireBtn.classList.toggle('bg-orange-600', !autoFireEnabled);
+      autofireBtn.classList.toggle('hover:bg-orange-700', !autoFireEnabled);
+    }
 
     // Create and initialize engine
     engine = new TankGameEngine();
     engine.init(canvas);
+
+    // Detect mobile and show hints
+    const mobile = isMobile();
+
+    // Auto-enable auto-fire on mobile for better experience
+    if (mobile) {
+      autoFireEnabled = true;
+      engine.setAutoFire(true);
+      updateAutoFireButton();
+    }
+
+    // Show mobile hints briefly on touch devices
+    if (mobile && mobileHints) {
+      mobileHints.classList.remove('hidden');
+      setTimeout(() => {
+        mobileHints.classList.add('fade-out');
+        setTimeout(() => {
+          mobileHints.classList.add('hidden');
+          mobileHints.classList.remove('fade-out');
+        }, 1000);
+      }, 3000);
+    }
 
     // Handle resize
     function handleResize() {
@@ -82,11 +135,24 @@ const { width = 1000, height = 700 } = Astro.props;
         canvas.height = height;
         engine.resize(width, height);
       } else {
+        // Responsive sizing
         const container = canvas.parentElement;
         if (container) {
           const rect = container.getBoundingClientRect();
-          const width = Math.min(rect.width - 32, 1000);
-          const height = Math.round(width * 0.7);
+          const maxWidth = Math.min(rect.width - 16, 1000);
+          const aspectRatio = 0.7;
+
+          // On mobile, use more of the screen height
+          let width = maxWidth;
+          let height = Math.round(width * aspectRatio);
+
+          // Constrain height on small screens
+          const maxHeight = window.innerHeight - 200; // Leave room for controls
+          if (height > maxHeight) {
+            height = maxHeight;
+            width = Math.round(height / aspectRatio);
+          }
+
           canvas.width = width;
           canvas.height = height;
           engine.resize(width, height);
@@ -117,6 +183,9 @@ const { width = 1000, height = 700 } = Astro.props;
         engine.dispose();
         engine = new TankGameEngine();
         engine.init(canvas);
+        if (autoFireEnabled) {
+          engine.setAutoFire(true);
+        }
         engine.start();
         pauseBtn.textContent = 'Pause';
       }
@@ -126,7 +195,7 @@ const { width = 1000, height = 700 } = Astro.props;
     function updateFullscreenButton() {
       const btnText = fullscreenBtn.querySelector('span');
       if (btnText) {
-        btnText.textContent = isFullscreen ? 'Exit Fullscreen' : 'Fullscreen';
+        btnText.textContent = isFullscreen ? 'Exit' : 'Fullscreen';
       }
     }
 
@@ -153,21 +222,12 @@ const { width = 1000, height = 700 } = Astro.props;
       handleResize();
     });
 
-    // Auto-fire toggle
-    let autoFireEnabled = false;
     autofireBtn.addEventListener('click', () => {
       autoFireEnabled = !autoFireEnabled;
       if (engine) {
         engine.setAutoFire(autoFireEnabled);
       }
-      const btnText = autofireBtn.querySelector('span');
-      if (btnText) {
-        btnText.textContent = autoFireEnabled ? 'Auto-Fire: ON' : 'Auto-Fire: OFF';
-      }
-      autofireBtn.classList.toggle('bg-green-600', autoFireEnabled);
-      autofireBtn.classList.toggle('hover:bg-green-700', autoFireEnabled);
-      autofireBtn.classList.toggle('bg-orange-600', !autoFireEnabled);
-      autofireBtn.classList.toggle('hover:bg-orange-700', !autoFireEnabled);
+      updateAutoFireButton();
     });
 
     // Auto-start
@@ -195,6 +255,8 @@ const { width = 1000, height = 700 } = Astro.props;
     display: flex;
     flex-direction: column;
     align-items: center;
+    width: 100%;
+    touch-action: none; /* Prevent browser gestures on touch */
   }
 
   .tank-game-container:fullscreen {
@@ -223,5 +285,103 @@ const { width = 1000, height = 700 } = Astro.props;
     max-width: 100%;
     height: auto;
     background: #1a1a2e;
+    touch-action: none;
+  }
+
+  .btn-control {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    color: white;
+    border-radius: 0.375rem;
+    transition: background-color 0.2s;
+    font-size: 0.875rem;
+    white-space: nowrap;
+  }
+
+  @media (min-width: 640px) {
+    .btn-control {
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+    }
+  }
+
+  /* Mobile touch hints */
+  .mobile-hints {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2rem;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 50;
+  }
+
+  .mobile-hints.hidden {
+    display: none;
+  }
+
+  .mobile-hints.fade-out {
+    animation: fadeOut 1s ease-out forwards;
+  }
+
+  @keyframes fadeOut {
+    to {
+      opacity: 0;
+    }
+  }
+
+  .hint-left, .hint-right {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    color: white;
+    font-size: 0.875rem;
+    font-weight: bold;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  }
+
+  .hint-circle {
+    width: 60px;
+    height: 60px;
+    border: 3px solid rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% {
+      transform: scale(1);
+      opacity: 0.8;
+    }
+    50% {
+      transform: scale(1.1);
+      opacity: 1;
+    }
+  }
+
+  /* Hide some text on very small screens */
+  @media (max-width: 400px) {
+    .btn-text {
+      display: none;
+    }
+  }
+
+  /* Hide fullscreen on mobile - doesn't work well */
+  .desktop-only {
+    display: none;
+  }
+
+  @media (min-width: 768px) {
+    .desktop-only {
+      display: flex;
+    }
   }
 </style>
